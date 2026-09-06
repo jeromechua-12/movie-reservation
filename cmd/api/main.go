@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
@@ -23,6 +25,11 @@ type config struct {
 	}
 }
 
+type application struct {
+	config config
+	logger *slog.Logger
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -30,16 +37,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
 	var cfg config
 
-	// flags
+	// config flags
 	flag.IntVar(&cfg.port, "port", 4000, "API Server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("POSTGRES_DSN"), "PostgreSQL DSN")
-
 	flag.Parse()
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	// db connection pool configuration
 	cfg.db.maxOpenConns = 25
@@ -53,6 +59,27 @@ func main() {
 	}
 
 	defer db.Close()
+	logger.Info("database connection established")
+
+	app := &application{
+		config: cfg,
+		logger: logger,
+	}
+
+	svr := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.port),
+		Handler:      app.routes(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+
+	logger.Info("starting server", "addr", svr.Addr, "env", cfg.env)
+
+	err = svr.ListenAndServe()
+	logger.Error(err.Error())
+	os.Exit(1)
 }
 
 func openDB(cfg config) (*sql.DB, error) {
