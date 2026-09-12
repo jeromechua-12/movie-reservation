@@ -6,25 +6,27 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 type Service struct {
 	repo *Repository
 }
 
-func NewService(repo *Repository) *Service {
+func newService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (svc *Service) createUser(ctx context.Context, email string, password string, role Role) error {
-	// validate credentials
-
-	// hash password
+func (svc *Service) registerUser(ctx context.Context, email string, password string, role Role) (User, error) {
+	// hash password using bcrypt
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
-		return err
+		return User{}, err
+	}
+
+	user := User{
+		Email:        email,
+		PasswordHash: passwordHash,
+		Role:         role,
 	}
 
 	// insert to DB
-	svc.repo.insertUser(ctx, email, string(passwordHash), role)
-	return nil
+	return svc.repo.insertUser(ctx, user)
 }

@@ -3,24 +3,43 @@ package auth
 import (
 	"context"
 	"database/sql"
-	_ "github.com/lib/pq"
+	"errors"
+	"time"
+
+	"github.com/lib/pq"
+)
+
+var (
+	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
 type Repository struct {
 	db *sql.DB
 }
 
-func NewRepo(db *sql.DB) (*Repository) {
+func newRepo(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) insertUser(ctx context.Context, email string, passwordHash string, role Role) error {
-	query := `INSERT INTO users (email, password_hash, role, created_at)
-	VALUES($1, $2, $3, UTC_TIMESTAMP)`
+func (r *Repository) insertUser(ctx context.Context, user User) (User, error) {
+	query := `INSERT INTO users (email, password_hash, role)
+	VALUES ($1, $2, $3)
+	RETURNING id, created_at, updated_at`
 
-	_, err := r.db.ExecContext(ctx, query, email, passwordHash, role)
+	args := []any{user.Email, user.PasswordHash, user.Role}
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		return err
+		if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+			if pqErr.Code == "23505" && pqErr.Constraint == "users_email_key" {
+				return User{}, ErrDuplicateEmail
+			}
+		}
+		return User{}, err
 	}
-	return nil
+
+	return user, nil
 }

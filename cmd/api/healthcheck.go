@@ -15,7 +15,6 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 
 	err := helper.WriteJSON(w, http.StatusOK, data, nil)
 	if err != nil {
-		app.logger.Error(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		helper.ServerErrorResponse(w, r, app.logger)
 	}
 }

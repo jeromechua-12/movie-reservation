@@ -12,6 +12,8 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+
+	"github.com/jeromechua-12/movie-reservation/internal/auth"
 )
 
 const version = "1.0.0"
@@ -29,6 +31,7 @@ type config struct {
 
 type application struct {
 	config config
+	db     *sql.DB
 	logger *slog.Logger
 }
 
@@ -68,9 +71,12 @@ func main() {
 		logger: logger,
 	}
 
+	// initiate handlers
+	authHandler := auth.NewHandler(db, logger)
+
 	svr := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
+		Handler:      app.routes(authHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

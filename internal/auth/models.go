@@ -7,16 +7,15 @@ import (
 type Role string
 
 const (
-	Admin Role = "admin"
+	Admin    Role = "admin"
 	Customer Role = "customer"
 )
 
 type User struct {
-	id int
-	email string
-	passwordHash []byte
-	role Role
-	createdAt time.Time
+	ID           int        `json:"id"`
+	Email        string     `json:"email"`
+	PasswordHash []byte     `json:"-"`
+	Role         Role       `json:"role"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at,omitzero"`
 }
-
-
