@@ -11,9 +11,7 @@ func validateRegistration(email, password string) map[string]string {
 
 	if isBlank(email) {
 		errors["email"] = "email cannot be empty"
-	}
-
-	if !validEmail(email) {
+	} else if !validEmail(email) {
 		errors["email"] = "must be a valid email"
 	}
 
