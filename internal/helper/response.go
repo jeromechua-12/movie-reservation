@@ -47,7 +47,9 @@ func WriteError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, sta
 	}
 }
 
-func ServerErrorResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+func ServerErrorResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err error) {
+	logError(r, logger, err)
+
 	msg := "the server encountered a problem and could not process your request"
 	WriteError(w, r, logger, http.StatusInternalServerError, msg)
 }
@@ -58,4 +60,9 @@ func BadRequestResponse(w http.ResponseWriter, r *http.Request, logger *slog.Log
 
 func FailedValidationResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger, errors map[string]string) {
 	WriteError(w, r, logger, http.StatusUnprocessableEntity, errors)
+}
+
+func InvalidCredentialsResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+	msg := "invalid email or password"
+	WriteError(w, r, logger, http.StatusUnauthorized, msg)
 }

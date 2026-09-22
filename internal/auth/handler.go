@@ -35,7 +35,7 @@ func (h *Handler) RegisterCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate email and password
-	validationErrors := validateRegistration(input.Email, input.Password)
+	validationErrors := validateCredentials(input.Email, input.Password)
 	if len(validationErrors) > 0 {
 		helper.FailedValidationResponse(w, r, h.logger, validationErrors)
 		return
@@ -48,13 +48,54 @@ func (h *Handler) RegisterCustomer(w http.ResponseWriter, r *http.Request) {
 			validationErrors["email"] = "email address already exists"
 			helper.FailedValidationResponse(w, r, h.logger, validationErrors)
 		default:
-			helper.ServerErrorResponse(w, r, h.logger)
+			helper.ServerErrorResponse(w, r, h.logger, err)
 		}
 		return
 	}
 
 	err = helper.WriteJSON(w, http.StatusCreated, map[string]User{"user": user}, nil)
 	if err != nil {
-		helper.ServerErrorResponse(w, r, h.logger)
+		helper.ServerErrorResponse(w, r, h.logger, err)
+	}
+}
+
+func (h *Handler) AuthenticateUser(w http.ResponseWriter, r *http.Request) {
+	// struct to hold expected data from request body
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// parse request body
+	err := helper.ReadJSON(w, r, &input)
+	if err != nil {
+		helper.BadRequestResponse(w, r, h.logger, err)
+		return
+	}
+
+	// validate email and password
+	validationErrors := validateCredentials(input.Email, input.Password)
+	if len(validationErrors) > 0 {
+		helper.FailedValidationResponse(w, r, h.logger, validationErrors)
+		return
+	}
+
+	// check if there is a matching email address and compare password
+	user, err := h.svc.authenticateUser(r.Context(), input.Email, input.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrPasswordMismatch):
+			helper.InvalidCredentialsResponse(w, r, h.logger)
+		case errors.Is(err, ErrEmailNotFound):
+			helper.InvalidCredentialsResponse(w, r, h.logger)
+		default:
+			helper.ServerErrorResponse(w, r, h.logger, err)
+		}
+		return
+	}
+
+	err = helper.WriteJSON(w, http.StatusOK, map[string]User{"user": user}, nil)
+	if err != nil {
+		helper.ServerErrorResponse(w, r, h.logger, err)
 	}
 }

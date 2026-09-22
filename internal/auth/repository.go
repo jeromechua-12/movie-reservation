@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
+	ErrEmailNotFound  = errors.New("email not found")
 )
 
 type Repository struct {
@@ -39,6 +40,37 @@ func (r *Repository) insertUser(ctx context.Context, user User) (User, error) {
 			}
 		}
 		return User{}, err
+	}
+
+	return user, nil
+}
+
+func (r *Repository) getUserByEmail(ctx context.Context, email string) (User, error) {
+	query := `SELECT id, email, password_hash, role, created_at, updated_at
+			  FROM users
+			  WHERE email = $1`
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.Role,
+		&user.CreatedAt,
+		&user.PasswordHash,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return User{}, ErrEmailNotFound
+		default:
+			return User{}, err
+		}
 	}
 
 	return user, nil

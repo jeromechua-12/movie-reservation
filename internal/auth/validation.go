@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-func validateRegistration(email, password string) map[string]string {
+func validateCredentials(email, password string) map[string]string {
 	errors := make(map[string]string)
 
 	if isBlank(email) {

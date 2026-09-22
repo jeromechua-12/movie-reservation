@@ -64,7 +64,7 @@ func TestValidateRegistration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			validationErrors := validateRegistration(tt.email, tt.password)
+			validationErrors := validateCredentials(tt.email, tt.password)
 			if !maps.Equal(validationErrors, tt.want) {
 				t.Errorf("got %v, want %v", validationErrors, tt.want)
 			}
