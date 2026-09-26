@@ -2,11 +2,21 @@ package helper
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
+func logError(r *http.Request, logger *slog.Logger, err error) {
+	var (
+		method = r.Method
+		uri    = r.URL.RequestURI()
+	)
+
+	logger.Error(err.Error(), "method", method, "uri", uri)
+}
+
 func WriteJSON(w http.ResponseWriter, status int, data any, headers http.Header) error {
-	js, err := json.Marshal(data)
+	js, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -26,15 +36,33 @@ func WriteJSON(w http.ResponseWriter, status int, data any, headers http.Header)
 	return nil
 }
 
-func WriteError(w http.ResponseWriter, status int, message string) {
-	data := map[string]string{
+func WriteError(w http.ResponseWriter, r *http.Request, logger *slog.Logger, status int, message any) {
+	data := map[string]any{
 		"error": message,
 	}
 
-	WriteJSON(w, status, data, nil)
+	err := WriteJSON(w, status, data, nil)
+	if err != nil {
+		logError(r, logger, err)
+	}
 }
 
-func WriteServerError(w http.ResponseWriter) {
+func ServerErrorResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err error) {
+	logError(r, logger, err)
+
 	msg := "the server encountered a problem and could not process your request"
-	WriteError(w, http.StatusInternalServerError, msg)
+	WriteError(w, r, logger, http.StatusInternalServerError, msg)
+}
+
+func BadRequestResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger, err error) {
+	WriteError(w, r, logger, http.StatusBadRequest, err.Error())
+}
+
+func FailedValidationResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger, errors map[string]string) {
+	WriteError(w, r, logger, http.StatusUnprocessableEntity, errors)
+}
+
+func InvalidCredentialsResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+	msg := "invalid email or password"
+	WriteError(w, r, logger, http.StatusUnauthorized, msg)
 }
