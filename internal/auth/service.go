@@ -49,7 +49,6 @@ func (svc *Service) authenticateUser(ctx context.Context, email, password string
 		default:
 			return User{}, err
 		}
-
 	}
 
 	return user, nil

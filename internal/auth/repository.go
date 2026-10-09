@@ -61,7 +61,7 @@ func (r *Repository) getUserByEmail(ctx context.Context, email string) (User, er
 		&user.PasswordHash,
 		&user.Role,
 		&user.CreatedAt,
-		&user.PasswordHash,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
