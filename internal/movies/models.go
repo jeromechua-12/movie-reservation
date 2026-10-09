@@ -4,10 +4,10 @@ import (
 	"time"
 )
 
-type Movies struct {
-	Id          int        `json:"id"`
+type Movie struct {
+	ID          int        `json:"id"`
 	Title       string     `json:"title"`
-	Description string     `json:"description"`
+	ReleaseYear int        `json:"release_year"`
 	Genre       string     `json:"genre"`
 	Runtime     int        `json:"runtime"`
 	CreatedAt   time.Time  `json:"created_at"`
