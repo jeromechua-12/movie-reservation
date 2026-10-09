@@ -20,3 +20,12 @@ func (svc *Service) createMovie(ctx context.Context, movie Movie) (Movie, error)
 
 	return movie, nil
 }
+
+func (svc *Service) getMovie(ctx context.Context, id int) (Movie, error) {
+	movie, err := svc.repo.getMovieByID(ctx, id)
+	if err != nil {
+		return Movie{}, err
+	}
+
+	return movie, nil
+}

@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrDuplicateMovie = errors.New("duplicate movie")
+	ErrMovieNotFound  = errors.New("movie not found")
 )
 
 type Repository struct {
@@ -39,6 +40,38 @@ func (r *Repository) insertMovie(ctx context.Context, movie Movie) (Movie, error
 			}
 		}
 		return Movie{}, err
+	}
+
+	return movie, nil
+}
+
+func (r *Repository) getMovieByID(ctx context.Context, id int) (Movie, error) {
+	query := `SELECT id, title, release_year, genre, runtime, created_at, updated_at
+	FROM movies
+	WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	var movie Movie
+
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&movie.ID,
+		&movie.Title,
+		&movie.ReleaseYear,
+		&movie.Genre,
+		&movie.Runtime,
+		&movie.CreatedAt,
+		&movie.UpdatedAt,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return Movie{}, ErrMovieNotFound
+		default:
+			return Movie{}, err
+		}
 	}
 
 	return movie, nil

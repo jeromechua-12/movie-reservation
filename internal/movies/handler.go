@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/jeromechua-12/movie-reservation/internal/helper"
 )
+
+var ErrInvalidIDParam = errors.New("invalid ID parameter")
 
 type Handler struct {
 	svc    *Service
@@ -68,7 +71,32 @@ func (h *Handler) CreateMovie(w http.ResponseWriter, r *http.Request) {
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("v1/movies/%d", movie.ID))
 
-	err = helper.WriteJSON(w, http.StatusCreated, map[string]Movie{"movie": movie}, nil)
+	err = helper.WriteJSON(w, http.StatusCreated, map[string]Movie{"movie": movie}, headers)
+	if err != nil {
+		helper.ServerErrorResponse(w, r, h.logger, err)
+	}
+}
+
+func (h *Handler) GetMovie(w http.ResponseWriter, r *http.Request) {
+	// retrieve "id" parameter
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 {
+		helper.BadRequestResponse(w, r, h.logger, ErrInvalidIDParam)
+		return
+	}
+
+	movie, err := h.svc.getMovie(r.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrMovieNotFound):
+			helper.NotFoundResponse(w, r, h.logger)
+		default:
+			helper.ServerErrorResponse(w, r, h.logger, err)
+		}
+		return
+	}
+
+	err = helper.WriteJSON(w, http.StatusOK, map[string]Movie{"movie": movie}, nil)
 	if err != nil {
 		helper.ServerErrorResponse(w, r, h.logger, err)
 	}
