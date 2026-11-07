@@ -151,7 +151,13 @@ func (h *Handler) UpdateMovie(w http.ResponseWriter, r *http.Request) {
 
 	movie, err = h.svc.updateMovie(r.Context(), movie)
 	if err != nil {
-		helper.ServerErrorResponse(w, r, h.logger, err)
+		switch {
+		case errors.Is(err, ErrDuplicateMovie):
+			validationErrors["title, release year"] = "duplicate title and release year exists"
+			helper.FailedValidationResponse(w, r, h.logger, validationErrors)
+		default:
+			helper.ServerErrorResponse(w, r, h.logger, err)
+		}
 		return
 	}
 

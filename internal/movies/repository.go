@@ -89,5 +89,13 @@ func (r *Repository) updateMovie(ctx context.Context, movie Movie) (Movie, error
 	args := []any{movie.Title, movie.ReleaseYear, movie.Genre, movie.Runtime, movie.ID}
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&movie.UpdatedAt)
+	if err != nil {
+		if pqErr, ok := errors.AsType[*pq.Error](err); ok {
+			if pqErr.Code == "23505" && pqErr.Constraint == "movies_title_release_year_key" {
+				return Movie{}, ErrDuplicateMovie
+			}
+		}
+		return Movie{}, err
+	}
 	return movie, err
 }
