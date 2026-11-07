@@ -27,10 +27,10 @@ func (r *Repository) insertMovie(ctx context.Context, movie Movie) (Movie, error
 	VALUES ($1, $2, $3, $4)
 	RETURNING id, created_at, updated_at`
 
-	args := []any{movie.Title, movie.ReleaseYear, movie.Genre, movie.Runtime}
-
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+
+	args := []any{movie.Title, movie.ReleaseYear, movie.Genre, movie.Runtime}
 
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.UpdatedAt)
 	if err != nil {
@@ -75,4 +75,19 @@ func (r *Repository) getMovieByID(ctx context.Context, id int) (Movie, error) {
 	}
 
 	return movie, nil
+}
+
+func (r *Repository) updateMovie(ctx context.Context, movie Movie) (Movie, error) {
+	query := `UPDATE movies
+	SET title = $1, release_year = $2, genre = $3, runtime = $4, updated_at = CURRENT_TIMESTAMP
+	WHERE id = $5
+	RETURNING updated_at`
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	args := []any{movie.Title, movie.ReleaseYear, movie.Genre, movie.Runtime, movie.ID}
+
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(&movie.UpdatedAt)
+	return movie, err
 }
