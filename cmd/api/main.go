@@ -14,6 +14,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/jeromechua-12/movie-reservation/internal/auth"
+	"github.com/jeromechua-12/movie-reservation/internal/movies"
 )
 
 const version = "1.0.0"
@@ -73,10 +74,11 @@ func main() {
 
 	// initiate handlers
 	authHandler := auth.NewHandler(db, logger)
+	movieHandler := movies.NewHandler(db, logger)
 
 	svr := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(authHandler),
+		Handler:      app.routes(authHandler, movieHandler),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

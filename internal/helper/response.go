@@ -66,3 +66,8 @@ func InvalidCredentialsResponse(w http.ResponseWriter, r *http.Request, logger *
 	msg := "invalid email or password"
 	WriteError(w, r, logger, http.StatusUnauthorized, msg)
 }
+
+func NotFoundResponse(w http.ResponseWriter, r *http.Request, logger *slog.Logger) {
+	msg := "requested resource could not be found"
+	WriteError(w, r, logger, http.StatusNotFound, msg)
+}

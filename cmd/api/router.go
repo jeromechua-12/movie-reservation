@@ -3,14 +3,28 @@ package main
 import (
 	"net/http"
 
+	"github.com/justinas/alice"
+
 	"github.com/jeromechua-12/movie-reservation/internal/auth"
+	"github.com/jeromechua-12/movie-reservation/internal/movies"
 )
 
-func (app *application) routes(authHandler *auth.Handler) http.Handler {
+func (app *application) routes(authHandler *auth.Handler, movieHandler *movies.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/healthcheck", app.healthcheckHandler)
+
+	// auth
 	mux.HandleFunc("POST /v1/auth/register", authHandler.RegisterCustomer)
 	mux.HandleFunc("POST /v1/auth/authenticate", authHandler.AuthenticateUser)
 
-	return mux
+	// movies
+	mux.HandleFunc("POST /v1/movies", movieHandler.CreateMovie)
+	mux.HandleFunc("GET /v1/movies/{id}", movieHandler.GetMovie)
+	mux.HandleFunc("PUT /v1/movies/{id}", movieHandler.UpdateMovie)
+	mux.HandleFunc("DELETE /v1/movies/{id}", movieHandler.DeleteMovie)
+
+	// logging middleware to all endpoints
+	standard := alice.New(app.LoggingMiddleware)
+
+	return standard.Then(mux)
 }
