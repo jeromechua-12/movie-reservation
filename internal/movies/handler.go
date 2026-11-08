@@ -166,3 +166,27 @@ func (h *Handler) UpdateMovie(w http.ResponseWriter, r *http.Request) {
 		helper.ServerErrorResponse(w, r, h.logger, err)
 	}
 }
+
+func (h *Handler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 {
+		helper.BadRequestResponse(w, r, h.logger, ErrInvalidIDParam)
+		return
+	}
+
+	err = h.svc.deleteMovie(r.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrMovieNotFound):
+			helper.NotFoundResponse(w, r, h.logger)
+		default:
+			helper.ServerErrorResponse(w, r, h.logger, err)
+		}
+		return
+	}
+
+	err = helper.WriteJSON(w, http.StatusOK, map[string]string{"message": "movie successfully deleted"}, nil)
+	if err != nil {
+		helper.ServerErrorResponse(w, r, h.logger, err)
+	}
+}

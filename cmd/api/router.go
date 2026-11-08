@@ -21,6 +21,7 @@ func (app *application) routes(authHandler *auth.Handler, movieHandler *movies.H
 	mux.HandleFunc("POST /v1/movies", movieHandler.CreateMovie)
 	mux.HandleFunc("GET /v1/movies/{id}", movieHandler.GetMovie)
 	mux.HandleFunc("PUT /v1/movies/{id}", movieHandler.UpdateMovie)
+	mux.HandleFunc("DELETE /v1/movies/{id}", movieHandler.DeleteMovie)
 
 	// logging middleware to all endpoints
 	standard := alice.New(app.LoggingMiddleware)

@@ -38,3 +38,7 @@ func (svc *Service) updateMovie(ctx context.Context, movie Movie) (Movie, error)
 
 	return movie, nil
 }
+
+func (svc *Service) deleteMovie(ctx context.Context, id int) error {
+	return svc.repo.deleteMovie(ctx, id)
+}

@@ -99,3 +99,27 @@ func (r *Repository) updateMovie(ctx context.Context, movie Movie) (Movie, error
 	}
 	return movie, err
 }
+
+func (r *Repository) deleteMovie(ctx context.Context, id int) error {
+	query := `DELETE FROM movies
+	WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrMovieNotFound
+	}
+
+	return nil
+}
